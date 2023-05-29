@@ -60,7 +60,7 @@
 		{/each}
 	</div>
 
-	<button onClick={start}> start </button>
+	<button on:click={start}> start </button>
 </section>
 
 <style>
