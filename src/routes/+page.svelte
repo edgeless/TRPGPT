@@ -37,7 +37,7 @@
 		return response.json(); 
 	}
 
-	async function start = () => {
+	async function start() {
 		const gmMessage = sendChatToGM();
 		const playerMessage = sendChatToPlayer();
 		history.append(gmMessage);
