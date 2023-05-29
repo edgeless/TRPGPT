@@ -3,7 +3,7 @@
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
 
-	async function sendChatToPlayer(message) => {
+	async function sendChatToPlayer(message){
 		// 既定のオプションには * が付いています
 		const response = await fetch('trgpt-player.vercel.com/chat', {
 			method: 'POST',
@@ -20,7 +20,7 @@
 		return response.json(); 
 	}
 
-	async function sendChatToGM(message) => {
+	async function sendChatToGM(message){
 		// 既定のオプションには * が付いています
 		const response = await fetch('trgpt-gm.vercel.com/chat', {
 			method: 'POST',
