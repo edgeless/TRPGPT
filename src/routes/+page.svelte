@@ -2,30 +2,63 @@
 	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
+
+	async function sendChatToPlayer = (message) => {
+		// 既定のオプションには * が付いています
+		const response = await fetch('trgpt-player.vercel.com/chat', {
+			method: 'POST',
+			mode: 'cors', 
+			cache: 'no-cache', 
+			credentials: 'same-origin', 
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			redirect: 'follow',
+			referrerPolicy: 'no-referrer', 
+			body: JSON.stringify(message) 
+		})
+		return response.json(); 
+	}
+
+	async function sendChatToGM = (message) => {
+		// 既定のオプションには * が付いています
+		const response = await fetch('trgpt-gm.vercel.com/chat', {
+			method: 'POST',
+			mode: 'cors', 
+			cache: 'no-cache', 
+			credentials: 'same-origin', 
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			redirect: 'follow',
+			referrerPolicy: 'no-referrer', 
+			body: JSON.stringify(message) 
+		})
+		return response.json(); 
+	}
+
+	async function start = () => {
+		const gmMessage = sendChatToGM();
+		history.append(gmMessage);
+	}
+
+	$: histories = []
+
 </script>
 
 <svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
+	<title>TRPGT</title>
+	<meta name="description" content="TRPGT" />
 </svelte:head>
 
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
+	<div>
+		{#each histories as utterance}
+			<p> utterance </p>
+		{/each}
+	</div>
 
-		to your new<br />SvelteKit app
-	</h1>
-
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
+	<button onClick={start}> start </button>
 </section>
 
 <style>
