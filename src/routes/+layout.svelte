@@ -1,6 +1,15 @@
 <script>
 	import Header from './Header.svelte';
 	import './styles.css';
+
+	import { onMount } from 'svelte';
+
+	onMount(() => {
+		import('eruda').then(({ default: eruda }) => {
+			eruda.init();
+		});
+		
+	});
 </script>
 
 <div class="app">
