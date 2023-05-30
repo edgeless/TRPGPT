@@ -3,65 +3,87 @@
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
 
+	let loading = false;
+	/**
+	 * @param {string} message
+	 */
 	async function sendChatToPlayer(message){
-		// 既定のオプションには * が付いています
-		const response = await fetch('trgpt-player.vercel.com/chat', {
+		loading = true;
+		fetch('https://trpgpt-player.vercel.app/api/chat', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
-			credentials: 'same-origin', 
+			//credentials: 'same-origin', 
 			headers: {
 				'Content-Type': 'application/json'
 			},
 			redirect: 'follow',
 			referrerPolicy: 'no-referrer', 
 			body: JSON.stringify(message) 
+		}).then((res) => res.text())// FIXME to json
+		.then((data) => {
+			loading = false;
+			histories.push(data);
+			histories = histories})
+		.catch((e) => {
+			console.log(e);
 		})
-		return response.json(); 
 	}
 
+	/**
+	 * @param {string} message
+	 */
 	async function sendChatToGM(message){
-		// 既定のオプションには * が付いています
-		const response = await fetch('trgpt-gm.vercel.com/chat', {
+		loading = true;
+		fetch('https://trpgpt-gm.vercel.app/api/chat', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
-			credentials: 'same-origin', 
+			//credentials: 'same-origin', 
 			headers: {
 				'Content-Type': 'application/json'
 			},
 			redirect: 'follow',
 			referrerPolicy: 'no-referrer', 
 			body: JSON.stringify(message) 
+		}).then((res) => res.text()) // FIXME to json
+		.then((data) => {
+
+			loading = false;
+			histories.push(data);
+			histories = histories})
+		.catch((e) => {
+			console.log(e);
 		})
-		return response.json(); 
 	}
+	let histories = ["test", "hoge"]
 
 	async function start() {
-		const gmMessage = sendChatToGM();
-		const playerMessage = sendChatToPlayer();
-		history.append(gmMessage);
-		history.append(playerMessage);
+		histories.push("-----");
+		await sendChatToGM("");
+		await sendChatToPlayer("");
 	}
-
-	$: histories = []
 
 </script>
 
 <svelte:head>
-	<title>TRPGT</title>
+	<title>TRPGTP</title>
 	<meta name="description" content="TRPGT" />
 </svelte:head>
 
 <section>
 	<div>
 		{#each histories as utterance}
-			<p> utterance </p>
+			<p> {utterance} </p>
 		{/each}
 	</div>
 
 	<button on:click={start}> start </button>
 </section>
+
+{#if loading}
+  <div>Loading...</div>
+{/if}
 
 <style>
 	section {
@@ -72,23 +94,4 @@
 		flex: 0.6;
 	}
 
-	h1 {
-		width: 100%;
-	}
-
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
-	}
 </style>
