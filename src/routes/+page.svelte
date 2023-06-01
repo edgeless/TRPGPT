@@ -251,7 +251,7 @@
 	</div>
 {/if}
 
-<div class="hero  bg-base-200">
+<div class="hero">
 	<div class="hero-content text-center">
 	  <div class="max-w-md">
 		<h1 class="text-5xl font-bold">Game Settings</h1>
@@ -260,9 +260,9 @@
 	</div>
   </div>
 
-  <div class="hero  bg-base-200">
+  <div class="hero">
 	<div class="hero-content text-center">
-	  <div class="max-w-md">
+	  <div class="">
 		<h1 class="text-5xl font-bold">Players Settings</h1>
 		<div class="overflow-x-auto">
 			<table class="table">
@@ -300,6 +300,7 @@
 				</div>
 			</div> -->
 			<div class="chat-bubble w-30">{utterance.content}</div>
+			<!-- <img src={ThumbsUp} /> <img src={ThumbsDown} /> -->
 		</div>
 	{/each}
 
