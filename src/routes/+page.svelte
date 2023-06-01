@@ -1,13 +1,18 @@
 <script>
-	import { slide } from 'svelte/transition';
+	import { slide, fade } from 'svelte/transition';
+	import { extractInfo } from '../lib/util'
 
 	let gameSetting =
 		'ダンジョンもので、地下3階のボスを倒せば終了です。';
+	/**
+	 * @type {any[]}
+	 */
 	let histories = [];
 	let playerNum = 3;
 	let loading = false;
 	let stat = '';
 	let instruction = '';
+	let summarizedInstruction = '';
 	let lastMessage = {};
 	let gameStarted = false;
 
@@ -24,7 +29,7 @@
 	async function proceedPlayer(from, id, message) {
 		loading = true;
 		stat = `player ${id} is thinking...`;
-		return fetch('https://trpgpt-player-gamma.vercel.app/api/chat', {
+		return fetch('https://trpgpt-player-gamma.vercel.app/api/proceed', {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -38,14 +43,12 @@
 		})
 			.then((res) => res.json())
 			.then((data) => {
+				console.log(data);
 				loading = false;
-				histories.push(data.content);
-				histories = histories;
+				stat = '';
 				if (lastMessage.strength < data.strength) {
 					lastMessage = data;
 				}
-				loading = false;
-				stat = '';
 			})
 			.catch((e) => {
 				console.log('failed in proceedPlayer');
@@ -53,9 +56,6 @@
 			});
 	}
 
-	/**
-	 * @param {string} message
-	 */
 	async function proceedGM() {
 		loading = true;
 		stat = `GM thinking...`;
@@ -75,6 +75,7 @@
 			.then((data) => {
 				loading = false;
 				stat = '';
+				data.id = -1;
 				histories.push(data);
 				histories = histories;
 			})
@@ -218,6 +219,13 @@
 			});
 	}
 
+	async function summarizePlayers() {
+		players.map((p) => {
+			return extractInfo(p)
+		})
+		players = players
+	}
+
 	async function start() {
 		console.log(playerNum);
 		histories = histories;
@@ -226,6 +234,7 @@
 			await createCharacter(i);
 		}
 		await setUsers();
+		summarizePlayers();
 		await startSession();
 	}
 
@@ -249,44 +258,46 @@
 	</div>
 {/if}
 
-<div class="hero">
-	<div class="hero-content text-center">
-	  <div class="max-w-md">
-		<h1 class="text-xl font-bold">Game Settings</h1>
-		<p transition:slide class="py-6">{instruction}</p>
-	  </div>
-	</div>
-  </div>
-
-  <div class="hero">
-	<div class="hero-content text-center">
-	  <div class="">
-		<h1 class="text-xl font-bold">Players Settings</h1>
-		<div class="overflow-x-auto">
-			<table class="table">
-				<!-- head -->
-				<thead>
-					<tr>
-						<th />
-						<th>id</th>
-						<th>description</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each players as player, i}
-						<tr transition:slide >
-							<th>1</th>
-							<td>{i}</td>
-							<td>{player}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+<div class="flex">
+	<div class="hero">
+		<div class="hero-content text-center">
+		<div class="max-w-md">
+			<h1 class="text-xl font-bold">Game Settings</h1>
+			<p transition:fade class="py-6">{instruction}</p>
 		</div>
-	
-	  </div>
+		</div>
 	</div>
-  </div>
+
+	<div class="hero">
+		<div class="hero-content text-center">
+		<div class="">
+			<h1 class="text-xl font-bold">Players Settings</h1>
+			<div class="overflow-x-auto">
+				<table class="table">
+					<!-- head -->
+					<thead>
+						<tr>
+							<th />
+							<th>id</th>
+							<th>description</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each players as player, i}
+							<tr transition:fade >
+								<th>1</th>
+								<td>{i}</td>
+								<td>{player}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		
+		</div>
+		</div>
+	</div>
+</div>
 
 
 <section>

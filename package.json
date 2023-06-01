@@ -35,6 +35,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"azure-openai": "^0.9.4",
 		"eruda": "^3.0.0",
 		"pnpm": "^8.6.0"
 	}
