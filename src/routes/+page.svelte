@@ -1,7 +1,7 @@
 <script>
 
 	let gameSetting = "\
-	aaa\
+	ダンジョンもので、地下3階のボスを倒せば終了です。\
 	";
 	let histories = [
 		{id: -1, content:"GM発言"},
@@ -26,7 +26,7 @@
 	async function proceedPlayer(from, id, message){
 		loading = true;
 		stat = `player ${id} is thinking...`;
-		fetch('https://trpgpt-player.vercel.app/api/chat', {
+		return fetch('https://trpgpt-player.vercel.app/api/chat', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -56,10 +56,10 @@
 	/**
 	 * @param {string} message
 	 */
-	async function proceedGM(message){
+	async function proceedGM(){
 		loading = true;
 		stat = `GM thinking...`;
-		fetch('https://trpgpt-gm.vercel.app/api/proceed', {
+		return fetch('https://trpgpt-gm.vercel.app/api/proceed', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -69,7 +69,7 @@
 			},
 			redirect: 'follow',
 			referrerPolicy: 'no-referrer', 
-			body: JSON.stringify(message) 
+			body: JSON.stringify({"from": lastMessage.id, "content": lastMessage.content}) 
 		}).then((res) => res.json()) 
 		.then((data) => {
 			loading = false;
@@ -82,12 +82,14 @@
 		})
 	}
 
+	// curl -X POST -H "Content-Type: application/json" --data '{"content":"ダンジョンものです"}'  https://trpgpt-gm.vercel.app/api/init
 	async function initSession(){
 		loading = true;
 		stat = "initializing the session...";
 		console.log("call initSession");
-
-		fetch('https://trpgpt-gm.vercel.app/api/init', {
+		
+		
+		return fetch('https://trpgpt-gm.vercel.app/api/init', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -119,7 +121,7 @@
 		stat = `Creating a Character ${id}`
 		console.log("call createCharacter");
 
-		fetch('https://trpgpt-player.vercel.app/api/init', {
+		return fetch('https://trpgpt-player.vercel.app/api/init', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -135,10 +137,10 @@
 			console.log(data);
 			loading = false;
 			stat = "";
-			players[id] = data.content
+			players.push(data.content);
 		}).catch((e) => {
+			console.log("failed in createCharacter");
 			console.log(e);
-			console.log(e.message());
 		})
 	}
 
@@ -147,7 +149,7 @@
 		stat = "GM thinking about players..."
 		console.log("call startSession");
 
-		fetch('https://trpgpt-gm.vercel.app/api/userset', {
+		return fetch('https://trpgpt-gm.vercel.app/api/userset', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -164,7 +166,7 @@
 			stat = "";
 		})
 		.catch((e) => {
-			console.log("failed in startSession");
+			console.log("failed in setUsers");
 			console.log(e);
 		})
 	}
@@ -173,7 +175,7 @@
 		loading = true;
 		console.log("call startSession");
 
-		fetch('https://trpgpt-gm.vercel.app/api/start', {
+		return fetch('https://trpgpt-gm.vercel.app/api/start', {
 			method: 'POST',
 			mode: 'cors', 
 			cache: 'no-cache', 
@@ -184,7 +186,7 @@
 			redirect: 'follow',
 			referrerPolicy: 'no-referrer', 
 			body: JSON.stringify({}) 
-		}).then((res) => res.json()) // FIXME to json
+		}).then((res) => res.json())
 		.then((data) => {
 			console.log(data);
 			histories.push(data.content);
@@ -203,18 +205,22 @@
 		histories = histories;
 		await initSession();
 		for(let i=0;  i<playerNum; i++) {
-			await createCharacter();
+			await createCharacter(instruction);
 		}
 		await setUsers();
 		await startSession();
 	}
 
 	async function next() {
-		await proceedGM("");
-		for(let i=0;  i<playerNum; i++) {
-			await proceedPlayer(lastMessage.id, i, lastMessage.content);
+		await proceedGM();
+		if(lastMessage.content != "") {
+
+			for(let i=0;  i<playerNum; i++) {
+				await proceedPlayer(lastMessage.id, i, lastMessage.content);
+			}
+			histories.push({lastMessage})
+			histories = histories;
 		}
-		histories.push({lastMessage})
 	}
 
 </script>
@@ -222,6 +228,30 @@
 {#if loading}
   <div>{stat}</div>
 {/if}
+
+<section>
+	<div class="overflow-x-auto">
+		<table class="table">
+		  <!-- head -->
+		  <thead>
+			<tr>
+			  <th></th>
+			  <th>id</th>
+			  <th>description</th>
+			</tr>
+		  </thead>
+		  <tbody>
+			{#each players as player,i}
+			<tr>
+			  <th>1</th>
+			  <td>{i}</td>
+			  <td>{player}</td>
+			</tr>
+			{/each}
+		  </tbody>
+		</table>
+	  </div>
+</section>
 
 <section>
 	<div>
