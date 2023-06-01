@@ -1,11 +1,9 @@
 <script>
+	import { slide } from 'svelte/transition';
+
 	let gameSetting =
 		'ダンジョンもので、地下3階のボスを倒せば終了です。';
-	let histories = [
-		{ id: -1, content: 'GM発言' },
-		{ id: 0, content: 'PL0発言' },
-		{ id: 1, content: 'PL1発言' }
-	];
+	let histories = [];
 	let playerNum = 3;
 	let loading = false;
 	let stat = '';
@@ -254,8 +252,8 @@
 <div class="hero">
 	<div class="hero-content text-center">
 	  <div class="max-w-md">
-		<h1 class="text-5xl font-bold">Game Settings</h1>
-		<p class="py-6">{instruction}</p>
+		<h1 class="text-xl font-bold">Game Settings</h1>
+		<p transition:slide class="py-6">{instruction}</p>
 	  </div>
 	</div>
   </div>
@@ -263,7 +261,7 @@
   <div class="hero">
 	<div class="hero-content text-center">
 	  <div class="">
-		<h1 class="text-5xl font-bold">Players Settings</h1>
+		<h1 class="text-xl font-bold">Players Settings</h1>
 		<div class="overflow-x-auto">
 			<table class="table">
 				<!-- head -->
@@ -276,7 +274,7 @@
 				</thead>
 				<tbody>
 					{#each players as player, i}
-						<tr>
+						<tr transition:slide >
 							<th>1</th>
 							<td>{i}</td>
 							<td>{player}</td>
@@ -293,12 +291,15 @@
 
 <section>
 	{#each histories as utterance}
-		<div class="chat chat-start w-full">
+		<div transition:slide class="chat chat-start w-full">
 			<!-- <div class="chat-image avatar">
 				<div class="w-10 rounded-full">
 					<img src="" />
 				</div>
 			</div> -->
+			<div>
+				{utterance.id}
+			</div>
 			<div class="chat-bubble w-30">{utterance.content}</div>
 			<!-- <img src={ThumbsUp} /> <img src={ThumbsDown} /> -->
 		</div>
