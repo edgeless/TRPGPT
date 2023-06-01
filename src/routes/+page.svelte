@@ -260,30 +260,36 @@
 	</div>
   </div>
 
-Players:
-<section>
-	<div class="overflow-x-auto">
-		<table class="table">
-			<!-- head -->
-			<thead>
-				<tr>
-					<th />
-					<th>id</th>
-					<th>description</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each players as player, i}
+  <div class="hero  bg-base-200">
+	<div class="hero-content text-center">
+	  <div class="max-w-md">
+		<h1 class="text-5xl font-bold">Players Settings</h1>
+		<div class="overflow-x-auto">
+			<table class="table">
+				<!-- head -->
+				<thead>
 					<tr>
-						<th>1</th>
-						<td>{i}</td>
-						<td>{player}</td>
+						<th />
+						<th>id</th>
+						<th>description</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each players as player, i}
+						<tr>
+							<th>1</th>
+							<td>{i}</td>
+							<td>{player}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	
+	  </div>
 	</div>
-</section>
+  </div>
+
 
 <section>
 	{#each histories as utterance}
