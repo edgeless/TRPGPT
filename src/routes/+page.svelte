@@ -288,11 +288,11 @@ Players:
 <section>
 	{#each histories as utterance}
 		<div class="chat chat-start w-full">
-			<div class="chat-image avatar">
+			<!-- <div class="chat-image avatar">
 				<div class="w-10 rounded-full">
-					<img src="/images/stock/photo-1534528741775-53994a69daeb.jpg" />
+					<img src="" />
 				</div>
-			</div>
+			</div> -->
 			<div class="chat-bubble w-30">{utterance.content}</div>
 		</div>
 	{/each}
