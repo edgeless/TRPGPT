@@ -13,6 +13,8 @@
 	let stat = ""
 	let instruction = "";
 	let lastMessage = {};
+	let gameStarted = false;
+
 	/**
 	 * @type {never[]}
 	 */
@@ -79,11 +81,13 @@
 		.catch((e) => {
 			console.log("failed in proceedGM");
 			console.log(e);
+			return proceedGM();
 		})
 	}
 
 	// curl -X POST -H "Content-Type: application/json" --data '{"content":"ダンジョンものです"}'  https://trpgpt-gm.vercel.app/api/init
 	async function initSession(){
+		gameStarted = true;
 		loading = true;
 		stat = "initializing the session...";
 		console.log("call initSession");
@@ -110,6 +114,7 @@
 		.catch((e) => {
 			console.log("failed in initSession");
 			console.log(e);
+			return initSession();
 		})
 	}
 
@@ -138,9 +143,11 @@
 			loading = false;
 			stat = "";
 			players.push(data.content);
+			players = players
 		}).catch((e) => {
 			console.log("failed in createCharacter");
 			console.log(e);
+			createCharacter(id);
 		})
 	}
 
@@ -168,11 +175,13 @@
 		.catch((e) => {
 			console.log("failed in setUsers");
 			console.log(e);
+			setUsers();
 		})
 	}
 
 	async function startSession(){
 		loading = true;
+		stat = "starting session..."
 		console.log("call startSession");
 
 		return fetch('https://trpgpt-gm.vercel.app/api/start', {
@@ -189,14 +198,18 @@
 		}).then((res) => res.json())
 		.then((data) => {
 			console.log(data);
-			histories.push(data.content);
+			loading = false;
+			stat = "";
 			lastMessage = data;
 			lastMessage.strength = 1;
 			lastMessage.id = -1;
+			histories.push(lastMessage);
+			histories = histories
 		})
 		.catch((e) => {
 			console.log("failed in startSession");
 			console.log(e);
+			startSession();
 		})
 	}
 
@@ -205,7 +218,7 @@
 		histories = histories;
 		await initSession();
 		for(let i=0;  i<playerNum; i++) {
-			await createCharacter(instruction);
+			await createCharacter(i);
 		}
 		await setUsers();
 		await startSession();
@@ -226,9 +239,17 @@
 </script>
 
 {#if loading}
-  <div>{stat}</div>
+<div class="toast">
+	<div class="alert alert-info">
+	  <span>{stat}</span>
+	</div>
+  </div>
 {/if}
 
+Game setting:
+{instruction}
+
+Players:
 <section>
 	<div class="overflow-x-auto">
 		<table class="table">
@@ -254,16 +275,27 @@
 </section>
 
 <section>
-	<div>
-		{#each histories as utterance}
-			<pre> {utterance.id}: {utterance.content} </pre>
-		{/each}
+	{#each histories as utterance}
+	<div class="chat chat-start w-full">
+		<div class="chat-image avatar">
+			<div class="w-10 rounded-full">
+				<img src="/images/stock/photo-1534528741775-53994a69daeb.jpg" />
+		  	</div>
+		</div>
+		<div class="chat-bubble w-30">{utterance.content}</div>
 	</div>
+	{/each}
 
+	{#if !gameStarted}
+	<input type="text" placeholder="Game Config" bind:value={gameSetting} 
+		class="input input-bordered w-full max-w-xs" />
 	<input type="text" placeholder="Player Num" bind:value={playerNum} 
 		class="input input-bordered w-full max-w-xs" />
 	<button on:click={start}> start </button>
+	{/if}
+	{#if !loading}
 	<button on:click={next}> next </button>
+	{/if}
 </section>
 
 <style>
