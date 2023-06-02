@@ -24,6 +24,7 @@
 	 */
 	let players = [];
 	let parsedPlayers = [];
+
 	/**
 	 * @param {string} message
 	 * @param {number} id
@@ -58,6 +59,33 @@
 				console.log(e);
 			});
 	}
+
+	 async function resetPlayers() {
+		loading = true;
+		stat = `init players...`;
+		return fetch(`${PL_HOST}/api/reset`, {
+			method: 'POST',
+			mode: 'cors',
+			cache: 'no-cache',
+			//credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			redirect: 'follow',
+			referrerPolicy: 'no-referrer',
+			body: JSON.stringify({})
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				loading = false;
+				stat = '';
+			})
+			.catch((e) => {
+				console.log('failed in resetPlayers');
+				console.log(e);
+			});
+	}
+
 
 	async function proceedGM() {
 		loading = true;
@@ -222,24 +250,18 @@
 			});
 	}
 
-	async function summarizePlayers() {
-		players.map((p) => {
-			return extractInfo(p)
-		})
-		players = players
-	}
-
 	async function start() {
 		console.log(playerNum);
 		histories = histories;
+		await resetPlayers();
 		await initSession();
 		for (let i = 0; i < playerNum; i++) {
 			await createCharacter(i);
 			parsedPlayers.push(extractInfo(players[i]));
 		}
 		await setUsers();
-		summarizePlayers();
 		await startSession();
+		next();
 	}
 
 	async function next() {
@@ -251,6 +273,7 @@
 			histories.push({ lastMessage });
 			histories = histories;
 		}
+		next();
 	}
 </script>
 
@@ -305,7 +328,7 @@
 									{#await parsedPlayers[i]}
 									  parsing...
 									{:then p}
-									 {p}
+									 {JSON.stringify(p)}
 								    {:catch e}
 									 Failed. {e}
 									{/await}
