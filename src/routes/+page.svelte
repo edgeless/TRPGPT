@@ -18,6 +18,7 @@
 	$: summarizedInstruction = extract_setting(instruction);
 	let lastMessage = {};
 	let gameStarted = false;
+	let story = "";
 	
 	/**
 	 * @type {never[]}
@@ -111,6 +112,7 @@
 					histories.push(data);
 					histories = histories;
 				}
+				story = data.story;
 			})
 			.catch((e) => {
 				console.log('failed in proceedGM');
@@ -288,21 +290,34 @@
 {/if}
 
 <div class="flex">
-	<div class="hero">
-		<div class="hero-content text-center">
-		<div class="max-w-md">
-			<h1 class="text-xl font-bold">Game Settings</h1>
-			<p transition:fade class="py-6">
-				{#await summarizedInstruction}
-					creating...
-				{:then inst}
-					{inst}
-				{:catch e}
-					failed. {e}
-				{/await}
-			</p>
+	<div>
+		<div class="hero">
+			<div class="hero-content text-center">
+			<div class="max-w-md">
+				<h1 class="text-xl font-bold">Game Settings</h1>
+				<p transition:fade class="py-6">
+					{#await summarizedInstruction}
+						creating...
+					{:then inst}
+						{inst}
+					{:catch e}
+						failed. {e}
+					{/await}
+				</p>
+			</div>
+			</div>
 		</div>
-		</div>
+		
+		<div class="hero">
+			<div class="hero-content text-center">
+			<div class="max-w-md">
+				<h1 class="text-xl font-bold">Story</h1>
+				<p transition:fade class="py-6">
+					{story}
+				</p>
+			</div>
+			</div>
+		</div>		
 	</div>
 
 	<div class="hero">
