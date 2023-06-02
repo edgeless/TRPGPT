@@ -1,6 +1,9 @@
 <script>
 	import { slide, fade } from 'svelte/transition';
-	import { extractInfo } from '../lib/util'
+	import { extractInfo, extract_setting } from '../lib/util'
+
+	const GM_HOST="https://trpgpt-gm.vercel.app"
+	const PL_HOST="https://trpgpt-player-2.vercel.app"
 
 	let gameSetting =
 		'ダンジョンもので、地下3階のボスを倒せば終了です。';
@@ -12,15 +15,15 @@
 	let loading = false;
 	let stat = '';
 	let instruction = '';
-	let summarizedInstruction = '';
+	$: summarizedInstruction = extract_setting(instruction);
 	let lastMessage = {};
 	let gameStarted = false;
-
+	
 	/**
 	 * @type {never[]}
 	 */
 	let players = [];
-
+	let parsedPlayers = [];
 	/**
 	 * @param {string} message
 	 * @param {number} id
@@ -29,7 +32,7 @@
 	async function proceedPlayer(from, id, message) {
 		loading = true;
 		stat = `player ${id} is thinking...`;
-		return fetch('https://trpgpt-player-gamma.vercel.app/api/proceed', {
+		return fetch(`${PL_HOST}/api/proceed`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -59,7 +62,7 @@
 	async function proceedGM() {
 		loading = true;
 		stat = `GM thinking...`;
-		return fetch('https://trpgpt-gm.vercel.app/api/proceed', {
+		return fetch(`${GM_HOST}/api/proceed`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -93,7 +96,7 @@
 		stat = 'initializing the session...';
 		console.log('call initSession');
 
-		return fetch('https://trpgpt-gm.vercel.app/api/init', {
+		return fetch(`${GM_HOST}/api/init`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -127,7 +130,7 @@
 		stat = `Creating a Character ${id}`;
 		console.log('call createCharacter');
 
-		return fetch('https://trpgpt-player-gamma.vercel.app/api/init', {
+		return fetch(`${PL_HOST}/api/init`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -160,7 +163,7 @@
 		stat = 'GM thinking about players...';
 		console.log('call startSession');
 
-		return fetch('https://trpgpt-gm.vercel.app/api/userset', {
+		return fetch(`${GM_HOST}/api/userset`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -189,7 +192,7 @@
 		stat = 'starting session...';
 		console.log('call startSession');
 
-		return fetch('https://trpgpt-gm.vercel.app/api/start', {
+		return fetch(`${GM_HOST}/api/start`, {
 			method: 'POST',
 			mode: 'cors',
 			cache: 'no-cache',
@@ -232,6 +235,7 @@
 		await initSession();
 		for (let i = 0; i < playerNum; i++) {
 			await createCharacter(i);
+			parsedPlayers.push(extractInfo(players[i]));
 		}
 		await setUsers();
 		summarizePlayers();
@@ -263,7 +267,15 @@
 		<div class="hero-content text-center">
 		<div class="max-w-md">
 			<h1 class="text-xl font-bold">Game Settings</h1>
-			<p transition:fade class="py-6">{instruction}</p>
+			<p transition:fade class="py-6">
+				{#await summarizedInstruction}
+					creating...
+				{:then inst}
+					{inst}
+				{:catch e}
+					failed. {e}
+				{/await}
+			</p>
 		</div>
 		</div>
 	</div>
@@ -280,6 +292,7 @@
 							<th />
 							<th>id</th>
 							<th>description</th>
+							<th>parsed</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -288,6 +301,15 @@
 								<th>1</th>
 								<td>{i}</td>
 								<td>{player}</td>
+								<td>
+									{#await parsedPlayers[i]}
+									  parsing...
+									{:then p}
+									 {p}
+								    {:catch e}
+									 Failed. {e}
+									{/await}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
