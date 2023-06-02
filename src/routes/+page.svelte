@@ -106,9 +106,11 @@
 			.then((data) => {
 				loading = false;
 				stat = '';
-				data.id = -1;
-				histories.push(data);
-				histories = histories;
+				if (data.content != "") {
+					data.id = -1;
+					histories.push(data);
+					histories = histories;
+				}
 			})
 			.catch((e) => {
 				console.log('failed in proceedGM');
