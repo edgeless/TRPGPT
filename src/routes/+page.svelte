@@ -1,12 +1,11 @@
 <script>
 	import { slide, fade } from 'svelte/transition';
-	import { extractInfo, extract_setting } from '../lib/util'
+	import { extractInfo, extract_setting } from '../lib/util';
 
-	const GM_HOST="https://trpgpt-gm.vercel.app"
-	const PL_HOST="https://trpgpt-player-2.vercel.app"
+	const GM_HOST = 'https://trpgpt-gm.vercel.app';
+	const PL_HOST = 'https://trpgpt-player-2.vercel.app';
 
-	let gameSetting =
-		'ダンジョンもので、地下3階のボスを倒せば終了です。';
+	let gameSetting = 'ダンジョンもので、地下3階のボスを倒せば終了です。';
 	/**
 	 * @type {any[]}
 	 */
@@ -17,9 +16,11 @@
 	let instruction = '';
 	$: summarizedInstruction = extract_setting(instruction);
 	let lastMessage = {};
+	let candidateMessage = { strength: -1 };
+	let actions = [];
 	let gameStarted = false;
-	let story = "";
-	
+	let story = '';
+
 	/**
 	 * @type {never[]}
 	 */
@@ -49,10 +50,15 @@
 			.then((res) => res.json())
 			.then((data) => {
 				console.log(data);
+				console.log(candidateMessage);
+
 				loading = false;
 				stat = '';
-				if (lastMessage.strength < data.strength) {
-					lastMessage = data;
+				actions.push(data);
+				actions = actions;
+				if (candidateMessage.strength < data.strength) {
+					candidateMessage = data;
+					candidateMessage.from = id;
 				}
 			})
 			.catch((e) => {
@@ -61,7 +67,7 @@
 			});
 	}
 
-	 async function resetPlayers() {
+	async function resetPlayers() {
 		loading = true;
 		stat = `init players...`;
 		return fetch(`${PL_HOST}/api/reset`, {
@@ -77,7 +83,7 @@
 			body: JSON.stringify({})
 		})
 			.then((res) => res.json())
-			.then((data) => {
+			.then(() => {
 				loading = false;
 				stat = '';
 			})
@@ -86,7 +92,6 @@
 				console.log(e);
 			});
 	}
-
 
 	async function proceedGM() {
 		loading = true;
@@ -101,15 +106,16 @@
 			},
 			redirect: 'follow',
 			referrerPolicy: 'no-referrer',
-			body: JSON.stringify({ from: lastMessage.id, content: lastMessage.content })
+			body: JSON.stringify({ from: lastMessage.from, content: lastMessage.content })
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				loading = false;
 				stat = '';
-				if (data.content != "") {
-					data.id = -1;
-					histories.push(data);
+				if (data.content != '') {
+					lastMessage = data;
+					lastMessage.from = -1;
+					histories.push(lastMessage);
 					histories = histories;
 				}
 				story = data.story;
@@ -208,7 +214,7 @@
 			body: JSON.stringify({ players: players })
 		})
 			.then((res) => res.json())
-			.then((data) => {
+			.then(() => {
 				loading = false;
 				stat = '';
 			})
@@ -243,7 +249,7 @@
 				stat = '';
 				lastMessage = data;
 				lastMessage.strength = 1;
-				lastMessage.id = -1;
+				lastMessage.from = -1;
 				histories.push(lastMessage);
 				histories = histories;
 			})
@@ -264,19 +270,23 @@
 			parsedPlayers.push(extractInfo(players[i]));
 		}
 		await setUsers();
-		await startSession();
+		let res = await startSession();
+		console.log(`startSession result: ${res}`);
 		next();
 	}
 
 	async function next() {
-		await proceedGM();
-		if (lastMessage.content != '') {
-			for (let i = 0; i < playerNum; i++) {
-				await proceedPlayer(lastMessage.id, i, lastMessage.content);
-			}
-			histories.push({ lastMessage });
-			histories = histories;
+		let res = await proceedGM();
+		console.log(`proceedGM result: ${res}`);
+		actions = [];
+		candidateMessage = { strength: -1 };
+		for (let i = 0; i < playerNum; i++) {
+			res = await proceedPlayer(lastMessage.from, i, lastMessage.content);
+			console.log(`Player ${i} result: ${res}`);
 		}
+		lastMessage = candidateMessage;
+		histories.push(lastMessage);
+		histories = histories;
 		next();
 	}
 </script>
@@ -293,74 +303,72 @@
 	<div>
 		<div class="hero">
 			<div class="hero-content text-center">
-			<div class="max-w-md">
-				<h1 class="text-xl font-bold">Game Settings</h1>
-				<p transition:fade class="py-6">
-					{#await summarizedInstruction}
-						creating...
-					{:then inst}
-						{inst}
-					{:catch e}
-						failed. {e}
-					{/await}
-				</p>
-			</div>
+				<div class="max-w-md">
+					<h1 class="text-xl font-bold">Game Settings</h1>
+					<p transition:fade class="py-6">
+						{#await summarizedInstruction}
+							creating...
+						{:then inst}
+							{inst}
+						{:catch e}
+							failed. {e}
+						{/await}
+					</p>
+				</div>
 			</div>
 		</div>
-		
+
 		<div class="hero">
 			<div class="hero-content text-center">
-			<div class="max-w-md">
-				<h1 class="text-xl font-bold">Story</h1>
-				<p transition:fade class="py-6">
-					{story}
-				</p>
+				<div class="max-w-md">
+					<h1 class="text-xl font-bold">Story</h1>
+					<p transition:fade class="py-6">
+						{story}
+					</p>
+				</div>
 			</div>
-			</div>
-		</div>		
+		</div>
 	</div>
 
 	<div class="hero">
 		<div class="hero-content text-center">
-		<div class="">
-			<h1 class="text-xl font-bold">Players Settings</h1>
-			<div class="overflow-x-auto">
-				<table class="table">
-					<!-- head -->
-					<thead>
-						<tr>
-							<th />
-							<th>id</th>
-							<th>description</th>
-							<th>parsed</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each players as player, i}
-							<tr transition:fade >
-								<th>1</th>
-								<td>{i}</td>
-								<td>{player}</td>
-								<td>
-									{#await parsedPlayers[i]}
-									  parsing...
-									{:then p}
-									 {JSON.stringify(p)}
-								    {:catch e}
-									 Failed. {e}
-									{/await}
-								</td>
+			<div class="">
+				<h1 class="text-xl font-bold">Players Settings</h1>
+				<div class="overflow-x-auto">
+					<table class="table">
+						<!-- head -->
+						<thead>
+							<tr>
+								<th />
+								<th>id</th>
+								<th>description</th>
+								<th>parsed</th>
+								<th>action</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each players as player, i}
+								<tr transition:fade>
+									<th>1</th>
+									<td>{i}</td>
+									<td>{player}</td>
+									<td>
+										{parsedPlayers[i]}
+									</td>
+									<td>
+										{#if actions.length > i}
+											{actions[i].content},{actions[i].strength}
+										{/if}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			</div>
-		
-		</div>
 		</div>
 	</div>
 </div>
-
 
 <section>
 	{#each histories as utterance}
@@ -371,7 +379,7 @@
 				</div>
 			</div> -->
 			<div>
-				{utterance.id}
+				{utterance.from}
 			</div>
 			<div class="chat-bubble w-30">{utterance.content}</div>
 			<!-- <img src={ThumbsUp} /> <img src={ThumbsDown} /> -->
