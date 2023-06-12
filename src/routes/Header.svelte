@@ -4,14 +4,13 @@
 	// import github from '$lib/images/github.svg';
 </script>
 
-<header>
-TRPGPT
+<header class="p-4">
+	<h1 class="text-5xl font-bold">TRPGPT</h1>
 </header>
 
 <style>
 	header {
-		display: flex;
 		justify-content: space-between;
+		height: 80px;
 	}
-
 </style>

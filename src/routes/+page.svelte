@@ -13,13 +13,26 @@
 	let playerNum = 3;
 	let loading = false;
 	let stat = '';
-	let instruction = '';
+	let instruction = 'まだセッションが始まっていません。';
 	$: summarizedInstruction = extract_setting(instruction);
 	let lastMessage = {};
 	let candidateMessage = { strength: -1 };
 	let actions = [];
 	let gameStarted = false;
-	let story = '';
+	let story = 'まだストーリーが始まっていません。';
+
+	const colors = [
+		'bg-emerald-800',
+		'bg-indigo-800',
+		'bg-yellow-800',
+		'bg-amber-800',
+		'bg-rose-800'
+	];
+
+	function getColor(id) {
+		let i = id % colors.length;
+		return colors[i];
+	}
 
 	/**
 	 * @type {never[]}
@@ -187,6 +200,7 @@
 				stat = '';
 				players.push(data.content);
 				players = players;
+				return data.content;
 			})
 			.catch((e) => {
 				console.log('failed in createCharacter');
@@ -266,8 +280,9 @@
 		await resetPlayers();
 		await initSession();
 		for (let i = 0; i < playerNum; i++) {
-			await createCharacter(i);
-			parsedPlayers.push(extractInfo(players[i]));
+			let pl = await createCharacter(i);
+			parsedPlayers.push(await extractInfo(pl));
+			parsedPlayers = parsedPlayers;
 		}
 		await setUsers();
 		let res = await startSession();
@@ -289,6 +304,13 @@
 		histories = histories;
 		next();
 	}
+
+	function id2name(id) {
+		if (id == -1) {
+			return 'GM';
+		}
+		return parsedPlayers[id].name;
+	}
 </script>
 
 {#if loading}
@@ -299,8 +321,8 @@
 	</div>
 {/if}
 
-<div class="flex">
-	<div>
+<div class="grid grid-cols-12 gap-4 w-full h-full max-w-fit divide-x divide-neutral-300">
+	<div class="col-span-2 h-full max-w-fit">
 		<div class="hero">
 			<div class="hero-content text-center">
 				<div class="max-w-md">
@@ -321,7 +343,7 @@
 		<div class="hero">
 			<div class="hero-content text-center">
 				<div class="max-w-md">
-					<h1 class="text-xl font-bold">Story</h1>
+					<h1 class="text-xl font-bold">Story Outline</h1>
 					<p transition:fade class="py-6">
 						{story}
 					</p>
@@ -329,95 +351,108 @@
 			</div>
 		</div>
 	</div>
+	<div class="col-span-7 overflow-y-auto">
+		<section>
+			{#each histories as utterance}
+				{#if utterance.from == -1}
+					<div transition:slide class="chat chat-start w-full">
+						<div class="avatar placeholder">
+							<div class="bg-neutral-focus text-neutral-content rounded-full w-24">
+								<span class="text-3xl">{id2name(utterance.from)}</span>
+							</div>
+						</div>
+						<div class="chat-bubble w-30">{utterance.content}</div>
+					</div>
+				{:else}
+					<div transition:slide class="chat chat-end w-full">
+						<div class="chat-bubble w-30 {getColor(utterance.from)}">{utterance.content}</div>
+						<div class="avatar placeholder">
+							<div
+								class="bg-neutral-focus text-neutral-content rounded-full w-24 {getColor(
+									utterance.from
+								)}"
+							>
+								<span class="text-3xl">{id2name(utterance.from)}</span>
+							</div>
+						</div>
+					</div>
+				{/if}
+			{/each}
 
-	<div class="hero">
-		<div class="hero-content text-center">
-			<div class="">
-				<h1 class="text-xl font-bold">Players Settings</h1>
-				<div class="overflow-x-auto">
-					<table class="table">
-						<!-- head -->
-						<thead>
-							<tr>
-								<th />
-								<th>id</th>
-								<th>description</th>
-								<th>parsed</th>
-								<th>action</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each players as player, i}
-								<tr transition:fade>
-									<th>1</th>
-									<td>{i}</td>
-									<td>{player}</td>
-									<td>
-										{parsedPlayers[i]}
-									</td>
-									<td>
-										{#if actions.length > i}
-											{actions[i].content},{actions[i].strength}
-										{/if}
-									</td>
+			<div class="w-full p-10">
+				{#if !gameStarted}
+					<div class="flex">
+						<div class="form-control w-full basis-1/6">
+							<label class="label block">
+								<span class="label-text">Player Num</span>
+								<input
+									type="number"
+									placeholder="Player Num"
+									bind:value={playerNum}
+									class="input input-bordered w-full"
+								/>
+							</label>
+						</div>
+						<div class="form-control w-full basis-5/6">
+							<label class="label block w-full">
+								<span class="label-text">Game Config</span>
+								<input
+									type="text"
+									placeholder="Game Config"
+									bind:value={gameSetting}
+									class="input input-bordered w-full"
+								/>
+							</label>
+						</div>
+					</div>
+					<div class="w-fill text-center">
+						<button class="btn" on:click={start}> start </button>
+					</div>
+				{/if}
+			</div>
+		</section>
+	</div>
+	<div class="col-span-3 max-w-fit">
+		<div class="hero">
+			<div class="hero-content text-center">
+				<div class="">
+					<h1 class="text-xl font-bold">Player Characters</h1>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<!-- head -->
+							<thead>
+								<tr>
+									<th>name</th>
+									<th>parameter</th>
 								</tr>
-							{/each}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{#each parsedPlayers as player, i}
+									<tr transition:fade>
+										<td>
+											{#await player}
+												Creating...
+											{:then pl}
+												{pl.name}
+											{/await}
+										</td>
+										<td>
+											{#await player}
+												Creating...
+											{:then pl}
+												{JSON.stringify(pl.parameter)}
+											{/await}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
-
-<section>
-	{#each histories as utterance}
-		<div transition:slide class="chat chat-start w-full">
-			<!-- <div class="chat-image avatar">
-				<div class="w-10 rounded-full">
-					<img src="" />
-				</div>
-			</div> -->
-			<div>
-				{utterance.from}
-			</div>
-			<div class="chat-bubble w-30">{utterance.content}</div>
-			<!-- <img src={ThumbsUp} /> <img src={ThumbsDown} /> -->
-		</div>
-	{/each}
-
-	<div class="">
-		{#if !gameStarted}
-			<div class="form-control w-full">
-				<label class="label">
-					<span class="label-text">Game Config</span>
-					<input
-						type="text"
-						placeholder="Game Config"
-						bind:value={gameSetting}
-						class="input input-bordered w-full max-w-xs"
-					/>
-				</label>
-			</div>
-			<div class="form-control w-full max-w-xs">
-				<label class="label">
-					<span class="label-text">Player Num</span>
-					<input
-						type="number"
-						placeholder="Player Num"
-						bind:value={playerNum}
-						class="input input-bordered w-full max-w-xs"
-					/>
-				</label>
-			</div>
-
-			<button class="btn" on:click={start}> start </button>
-		{/if}
-		{#if !loading}
-			<button class="btn" on:click={next}> next </button>
-		{/if}
-	</div>
-</section>
 
 <style>
 	section {
